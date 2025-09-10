@@ -1,0 +1,84 @@
+services:
+  mongo:
+    image: mongo:6
+    restart: unless-stopped
+    ports: ["27017:27017"]
+    volumes: [ "mongo_data:/data/db" ]
+
+  backend:
+    build: ./apps/backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      MONGODB_URI: mongodb://mongo:27017/authdb
+      JWT_SECRET: eg-jwt-secret
+      CORS_ORIGIN: http://localhost:5173
+      COOKIE_SECURE: "false"
+      SECURITY_XSS: "true"
+      SECURITY_CSRF: "true"
+      RATE_LIMIT_WINDOW_MS: "900000"
+      RATE_LIMIT_MAX: "100"
+      METRICS_ENABLED: "true"
+      METRICS_ROUTE: /metrics
+      METRICS_DEFAULT_BUCKETS: "0.01,0.05,0.1,0.3,0.5,1,2,5"
+      SERVICE_NAME: auth-backend
+    ports: ["3000:3000"]
+    depends_on: [mongo]
+    x-bake:
+      provenance: false
+
+  frontend:
+    build:
+      context: ./apps/frontend-react
+      args:
+        API_URL: http://backend:3000
+    restart: unless-stopped
+    ports:
+      - "5173:3000"
+    depends_on:
+      - backend
+    x-bake:
+      provenance: false
+
+  prometheus:
+    image: prom/prometheus:v2.55.0
+    restart: unless-stopped
+    command: ["--config.file=/etc/prometheus/prometheus.yml"]
+    volumes:
+      - ./ops/prometheus:/etc/prometheus:ro
+    ports: ["9090:9090"]
+    depends_on: [backend]
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/provisioning/dashboards/auth-overview.json
+    volumes:
+      - ./ops/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3001:3000"
+    depends_on: [prometheus]
+
+  loadgen:
+    image: curlimages/curl:8.10.1
+    depends_on: [backend]
+    command: >
+      sh -c '
+        echo "Loadgen starting...";
+        while true; do
+          curl -s -o /dev/null -w "code=%{http_code}\n" http://backend:3000/metrics;
+          curl -s -o /dev/null -w "code=%{http_code}\n" http://backend:3000/auth/me;
+          sleep 2;
+        done
+      '
+
+volumes:
+  mongo_data:

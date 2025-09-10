@@ -1,0 +1,162 @@
+{
+  "info": {
+    "name": "EG-MA Backend (Local)",
+    "_postman_id": "c10a2c61-2d5c-4a42-9f1b-COLL",
+    "description": "Signup/Signin/Me/Signout with cookie+CSRF and metrics sanity",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth — Signup",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": { "raw": "{{base_url}}/auth/signup", "host": ["{{base_url}}"], "path": ["auth","signup"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"name\": \"{{name}}\",\n  \"password\": \"{{password}}\"\n}"
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Signup 201', function () {",
+              "  pm.response.to.have.status(201);",
+              "  const json = pm.response.json();",
+              "  pm.expect(json).to.have.keys('id','email','name');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth — Signin",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": { "raw": "{{base_url}}/auth/signin", "host": ["{{base_url}}"], "path": ["auth","signin"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Expect 200 with user and a csrfToken (if server has SECURITY_CSRF=true)",
+              "pm.test('Signin 200', function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "pm.test('Has user fields', function () { pm.expect(json).to.have.keys('id','email','name'); });",
+              "// Capture csrfToken if provided",
+              "if (json && json.csrfToken) {",
+              "  pm.environment.set('csrfToken', json.csrfToken);",
+              "}",
+              "// Ensure cookie stored (enable Postman cookie jar!)",
+              "pm.test('Set-Cookie present', function () {",
+              "  const cookies = pm.response.headers.get('set-cookie');",
+              "  pm.expect(cookies).to.be.a('string');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth — Me (protected)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{base_url}}/auth/me", "host": ["{{base_url}}"], "path": ["auth","me"] }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Me 200', function () { pm.response.to.have.status(200); });",
+              "const json = pm.response.json();",
+              "pm.test('Has user fields', function () { pm.expect(json).to.have.keys('id','email','name'); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth — Signout",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "x-csrf-token", "value": "{{csrfToken}}", "type": "text", "disabled": false }
+        ],
+        "url": { "raw": "{{base_url}}/auth/signout", "host": ["{{base_url}}"], "path": ["auth","signout"] }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// If CSRF is disabled on server, header is irrelevant.",
+              "if (pm.environment.get('csrf_enabled') !== 'true') {",
+              "  pm.request.headers.remove('x-csrf-token');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Signout 204', function () { pm.response.to.have.status(204); });",
+              "// Clear stored csrf token",
+              "pm.environment.unset('csrfToken');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Metrics — /metrics",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{base_url}}/metrics", "host": ["{{base_url}}"], "path": ["metrics"] }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Metrics 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Has Prometheus format', function () {",
+              "  pm.expect(pm.response.text()).to.include('# HELP http_requests_total');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ],
+  "protocolProfileBehavior": {
+    "disableBodyPruning": true
+  }
+}
