@@ -22,8 +22,7 @@ export DOCKER_BUILDKIT_PROGRESS=plain
 export BUILDKIT_PROGRESS=plain
 docker-compose build --no-cache
 
-
-<img width="2860" height="1320" alt="Screenshot 2025-09-10 at 3 42 36 PM" src="https://github.com/user-attachments/assets/471e7745-4791-4d27-bf28-ed882d51d8f5" /> <img width="2928" height="1652" alt="Screenshot 2025-09-10 at 3 42 21 PM" src="https://github.com/user-attachments/assets/30e91ac6-a5a3-48f9-8bbb-ddfd606019a3" />
-
-
-
+<p align="center">
+<img height="1320"  width="45%" alt="Screenshot 2025-09-10 at 3 42 36 PM" src="https://github.com/user-attachments/assets/471e7745-4791-4d27-bf28-ed882d51d8f5" /> 
+<img width="2928"  width="45%" alt="Screenshot 2025-09-10 at 3 42 21 PM" src="https://github.com/user-attachments/assets/30e91ac6-a5a3-48f9-8bbb-ddfd606019a3" />
+</p>
