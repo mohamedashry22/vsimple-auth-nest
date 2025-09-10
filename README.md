@@ -21,3 +21,6 @@ run: macos
 export DOCKER_BUILDKIT_PROGRESS=plain
 export BUILDKIT_PROGRESS=plain
 docker-compose build --no-cache
+
+
+<img width="2860" height="1320" alt="Screenshot 2025-09-10 at 3 42 36 PM" src="https://github.com/user-attachments/assets/471e7745-4791-4d27-bf28-ed882d51d8f5" />
