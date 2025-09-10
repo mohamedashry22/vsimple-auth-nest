@@ -1,4 +1,4 @@
-# Monorepo (Nest Backend + React Frontend)
+#  (Nest Backend + React Frontend)
 
 apps/
   backend/
